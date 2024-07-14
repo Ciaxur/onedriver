@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"os"
@@ -506,7 +507,11 @@ func (f *Filesystem) Open(cancel <-chan struct{}, in *fuse.OpenIn, out *fuse.Ope
 		ctx.Info().Msg("Found content in cache.")
 
 		// we check size ourselves in case the API file sizes are WRONG (it happens)
-		st, _ := fd.Stat()
+		st, err := fd.Stat()
+		if err != nil {
+			ctx.Debug().Msg(fmt.Sprintf("Unhandled error! %v", err))
+		}
+
 		inode.DriveItem.Size = uint64(st.Size())
 		return fuse.OK
 	}
@@ -625,7 +630,7 @@ func (f *Filesystem) Write(cancel <-chan struct{}, in *fuse.WriteIn, data []byte
 		Int("bufsize", nWrite).
 		Int("offset", offset).
 		Logger()
-	ctx.Trace().Msg("")
+	ctx.Debug().Msg("")
 
 	fd, err := f.content.Open(id)
 	if err != nil {
@@ -695,7 +700,7 @@ func (f *Filesystem) Flush(cancel <-chan struct{}, in *fuse.FlushIn) fuse.Status
 	}
 
 	id := inode.ID()
-	log.Trace().
+	log.Debug().
 		Str("op", "Flush").
 		Str("id", id).
 		Str("path", inode.Path()).
